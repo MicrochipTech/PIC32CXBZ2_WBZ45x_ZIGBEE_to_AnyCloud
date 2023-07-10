@@ -185,7 +185,7 @@ Follow the steps provided in the link to [Build and program the application](htt
 - The Extended Light can be switched ON or OFF by issuing an onOff command(To get the network address, use getNetworkAddress command on your extended light device) from the CI as shown below.
 ``` onOff -s 0x78ca 0x23 -on```
 
-![](Docs/zigbee-ble.gif)	
+![](Docs/zigbee_mqtt.gif)	
 
 #### Note
 
