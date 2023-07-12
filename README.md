@@ -31,17 +31,9 @@ Checkout the <a href="https://microchipsupport.force.com/s/" target="_blank">Tec
 
 ## 1. Introduction<a name="step1">
 
-This application enables us to create and control a ZigBee network through Cloud. This application uses the WBZ451 Curiosity board for ZigBee and WFI32-IoT Development Board to connect to the Cloud server. The WBZ451 Curiosity board acts as a Zigbee Combined Interface application and is connected to Cloud using WFI32-IoT Development Board [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud)  via UART console commands. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands. On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
+This application demonstrate on how to interface a Zigbee network to Cloud using WBZ451 and WFI32 devices. In this Demo, the WBZ451 Curiosity board acts as a Zigbee Combined Interface device that can communicate with Zigbee end devices and routers in the network. The [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud) application running in WFI32-IoT Development Board acts as a cloud gateway that can send and receive data from the Zigbee network to the any cloud. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands. On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
 
 ![](Docs/Hardware_Setup.PNG)
-
-Here the ZigBee console commands are sent to the WBZ451 Curiosity board by publishing a message in the Cloud. Data received from MQTT is in the given format.ZigBee console data from MQTT is taken from the data received from WFI32 IOT board.
-
-![](Docs/Frame1.PNG)
-
-Based on the received data the Zigbee response data is transmitted to WFI32 IOT board in the given format. The ZigBee Console data is given as the payload. WFI32 IoT Board publishes this message onto Cloud.
-
-![](Docs/Frame2.PNG)
 
 | Tip | Go through the [overview](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-668A6CB2-F1FB-438D-9E1E-D67AC3C1C132) for understanding few key Zigbee 3.0 protocol concepts |
 | :- | :- |
@@ -174,6 +166,14 @@ Follow the steps provided in the link to [Build and program the application](htt
 - In this application, manual commissioning is used to create a Zigbee network.
 - The Zigbee AnyCloud application starts initializing WFI32 device by connecting to the the WiFi network and getting connected to MQTT broker. 
 - The user can control the Zigbee network with his Mobile phone connected to Cloud server.
+- Here the ZigBee console commands are sent to the WBZ451 Curiosity board by publishing a message in the Cloud. Data received from MQTT is in the given format.ZigBee console data from MQTT is taken from the data received from WFI32 IOT board.
+
+![](Docs/Frame1.PNG)
+
+- Based on the received data the Zigbee response data is transmitted to WFI32 IOT board in the given format. The ZigBee Console data is given as the payload. WFI32 IoT Board publishes this message onto MQTT.
+
+![](Docs/Frame2.PNG)
+
 - To trigger the commissioning procedures manually, the user has to issue the following console commands in the MQTT app as given below:
 
 **Step 1** - Network Formation – “invokeCommissioning 4 0” 
