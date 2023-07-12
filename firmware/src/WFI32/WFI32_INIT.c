@@ -177,43 +177,7 @@ void parseRIO2RxMessage(char *buffer) {
 
 
 
-uint16_t read_data(char *dataBuffer) 
-{
-    int count;
 
-    count = SERCOM1_USART_ReadCountGet();
-    if (count == 0)
-        return 0;
-    if (!linePtrBuffer) //
-        linePtrBuffer = dataBuffer; //Initialize to buffer address
-
-    do {
-        uint8_t byte;
-
-        if (SERCOM1_USART_Read(&byte, 1)) //Read one byte at a  time
-        {
-            --count;
-            *linePtrBuffer++ = byte;
-            numberOfBytes++;
-            if (numberOfBytes >= 2) //if I have read at least 2 bytes
-            {
-                //check if last 2 character are \n\r
-                if ((*(linePtrBuffer - 1) == 0x0A)
-                        && (*(linePtrBuffer - 2) == 0x0d)) {
-                    //found CRLF
-                    *linePtrBuffer = 0; // Terminate line with NULL
-                    linePtrBuffer = NULL;
-                    uint16_t bytes;
-                    bytes = numberOfBytes;
-                    numberOfBytes = 0;
-                    return bytes;
-                }
-            }
-        };
-    } while (count);
-
-    return 0;
-}
 /*  A brief description of a section can be given directly below the section
     banner.
  */
@@ -455,7 +419,6 @@ void WFI32_task(void)
         
         case WFI32_IDLE:
         {
-            
             //error handle
         }
         break;

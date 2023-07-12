@@ -31,9 +31,17 @@ Checkout the <a href="https://microchipsupport.force.com/s/" target="_blank">Tec
 
 ## 1. Introduction<a name="step1">
 
-This application enables us to create a ZigBee AnyCloud application using the ZigBee functionality of the WBZ451 Curiosity board and the WiFi functionality of the WFI32-IoT Development Board. The WBZ451 Curiosity board acts as a Zigbee Combined Interface application and is connected to Cloud using WFI32-IoT Development Board [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud)  via UART console commands. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands. On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
+This application enables us to create and control a ZigBee network through Cloud. This application uses the WBZ451 Curiosity board for ZigBee and WFI32-IoT Development Board to connect to the Cloud server. The WBZ451 Curiosity board acts as a Zigbee Combined Interface application and is connected to Cloud using WFI32-IoT Development Board [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud)  via UART console commands. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands. On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
 
 ![](Docs/Hardware_Setup.PNG)
+
+Here the ZigBee console commands are sent to the WBZ451 Curiosity board by publishing a message in the Cloud. Data received from MQTT is in the given format.ZigBee console data from MQTT is taken from the data received from WFI32 IOT board.
+
+![](Docs/Frame1.PNG)
+
+Based on the received data the Zigbee response data is transmitted to WFI32 IOT board in the given format. The ZigBee Console data is given as the payload. WFI32 IoT Board publishes this message onto Cloud.
+
+![](Docs/Frame2.PNG)
 
 | Tip | Go through the [overview](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-668A6CB2-F1FB-438D-9E1E-D67AC3C1C132) for understanding few key Zigbee 3.0 protocol concepts |
 | :- | :- |
@@ -63,7 +71,7 @@ This application enables us to create a ZigBee AnyCloud application using the Zi
 	  - wireless_pic32cxbz_wbz: v1.1.0
 	  - wireless_zigbee: v5.0.0
 
-- Any Serial Terminal application like [TERA TERM](https://download.cnet.com/Tera-Term/3000-2094_4-75766675.html) terminal application
+- Any MQTT cloud application like [MyMQTT](https://mymqtt.app/)
 
 - [MPLAB X IPE v6.10](https://microchipdeveloper.com/ipe:installation)
 
@@ -84,7 +92,7 @@ This application enables us to create a ZigBee AnyCloud application using the Zi
 
 ## 5. Harmony MCC Configuration<a name="step5">
 
-### Getting started with Multisensor application in WBZ451 Curiosity board 
+### Getting started with ZigBee MQTT application in WBZ451 Curiosity board 
 
 | Tip | New users of MPLAB Code Configurator are recommended to go through the [overview](https://onlinedocs.microchip.com/pr/GUID-1F7007B8-9A46-4D03-AEED-650357BA760D-en-US-6/index.html?GUID-B5D058F5-1D0B-4720-8649-ACE5C0EEE2C0) |
 | :- | :- |
@@ -142,7 +150,7 @@ This application enables us to create a ZigBee AnyCloud application using the Zi
 - Make sure the "Files of type" is "C Source files" while adding ".c" files and "Header files" while adding ".h" files.
 - Select the folder and click "add".
 
-**Step 7** - Clean and build the project. To run the project, select "Make and program device" button.
+**Step 8** - Clean and build the project. To run the project, select "Make and program device" button.
 
 ### Getting started with other Zigbee applications in WBZ451 Curiosity board 
 

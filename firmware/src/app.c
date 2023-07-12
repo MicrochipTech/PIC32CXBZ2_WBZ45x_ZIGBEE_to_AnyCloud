@@ -244,20 +244,16 @@ void APP_Tasks ( void )
                         char s[2]=",";
                         char *token;
                         int len;
-                        char *substring=OSAL_Malloc(len1);//calloc(len1,sizeof(int));       //OSAL_Malloc
+                        char *substring=OSAL_Malloc(len1);
                         if(substring==NULL)
                             break;
-//                        strtok(substring, (const char *)PREAMBLE);
                         strncpy(substring,appMsg->msgData+(LEN_POSITION-1),len1);
-//                        printf(substring);
                         token = strtok(substring, s);
                         len=a2i(token);
-                        char *substring2=OSAL_Malloc(len);//calloc(len,sizeof(int));       //OSAL_Malloc
+                        char *substring2=OSAL_Malloc(len);
                         if(substring2==NULL)
                             break;
                         memset(appMsg->msgData,0, sizeof(appMsg->msgData));
-//                        char *substring2=calloc(len,sizeof(int));
-//                        printf("\r\n%d\r\n",len);
                         for(int i=0;i<len1;i++)
                         {
                             if( substring[i] == 34 )
@@ -266,7 +262,6 @@ void APP_Tasks ( void )
                                  break;
                             }
                         }
-//                        printf(substring2);
                         SERCOM0_USART_Write((uint8_t*)substring2,len);
                         SERCOM0_USART_Write((uint8_t*)"\r\n",strlen("\r\n"));
                         appMsg->msgId = APP_MSG_UART_CMD_READY;
