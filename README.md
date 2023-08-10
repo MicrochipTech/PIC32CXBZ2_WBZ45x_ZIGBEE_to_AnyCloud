@@ -6,7 +6,7 @@
 > "IoT Made Easy!" 
 
 Devices: **| PIC32CXBZ2 | WBZ45x | PIC32MZ-W1 | WFI32 |**<br>
-Features: **| ZIGBEE | WiFi |**
+Features: **| ZIGBEE | WiFi | BLE |**
 
 
 ## ⚠ Disclaimer
@@ -31,8 +31,8 @@ Checkout the <a href="https://microchipsupport.force.com/s/" target="_blank">Tec
 
 ## 1. Introduction<a name="step1">
 
-This application demonstrate on how to interface a Zigbee network to Cloud using WBZ451 and WFI32 devices. In this Demo, the WBZ451 Curiosity board acts as a Zigbee Combined Interface device that can communicate with Zigbee end devices and routers in the network. The [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud) application running in WFI32-IoT Development Board acts as a cloud gateway that can send and receive data from the Zigbee network to the any cloud. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands. On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
-
+This application demonstrate on how to interface a Zigbee network to Cloud using WBZ451 and WFI32 devices by passing the AP credentials via MBD(Microchip Bluetooth Data) application in mobile phone . In this Demo, the WBZ451 Curiosity board acts as a Zigbee Combined Interface device that can communicate with Zigbee end devices and routers in the network. The [PIC32MZW1_AnyCloud](https://github.com/MicrochipTech/PIC32MZW1_AnyCloud) application running in WFI32-IoT Development Board acts as a cloud gateway that can send and receive data from the Zigbee network to the any cloud. On startup the WBZ451 device initializes the WiFi and Cloud connection on WFI32 device via AT commands after BLE provisioning is completed using MBD app . On successful initialization, the [Zigbee console commands](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-BA19A3F8-CCEB-44C2-B5BF-C203DD6A8D41) have been mapped to Cloud. With the help of console commands, the user can allow new devices to join the Zigbee network as well as monitor and control the devices in the Zigbee network through Cloud.
+ 
 ![](Docs/Hardware_Setup.PNG)
 
 | Tip | Go through the [overview](https://onlinedocs.microchip.com/pr/GUID-A5330D3A-9F51-4A26-B71D-8503A493DF9C-en-US-2/index.html?GUID-668A6CB2-F1FB-438D-9E1E-D67AC3C1C132) for understanding few key Zigbee 3.0 protocol concepts |
@@ -107,7 +107,15 @@ This application demonstrate on how to interface a Zigbee network to Cloud using
 
 ![](Docs/SERCOM1.PNG)
 
-- From Device resources, go to Library->Harmony->Peripherals->SERCOM and selct SERCOM0. The configuration is depicted as follows.
+- From Device resources, go to Library->Harmony->Wireless->Drivers->BLE and select BLE Stack. Accept Dependencies or satisfiers, select "Yes" for automatic connections. Follow the configurations illustrated in the following figure.
+
+![](Docs/BLE_stack.PNG)
+
+- From Device resources, go to  Library->Harmony->Wireless->Drivers->BLE->Services and select Custom Service. Accept Dependencies or satisfiers. The configuration is depicted as follows.
+
+![](Docs/custom_service.PNG)
+
+- From Device resources, go to Library->Harmony->Peripherals->SERCOM and select SERCOM0. The configuration is depicted as follows.
 
 ![](Docs/SERCOM0.PNG)
 
@@ -131,7 +139,7 @@ This application demonstrate on how to interface a Zigbee network to Cloud using
 | :- | :- |
 | Path | firmware/src |
 
-- Copy the "WFI32" folder, "app.c" and "app.h" which can be found by navigating to the following path: "...\firmware\src"
+- Copy the "WFI32" folder, "app_ble" folder, "app.c" and "app.h" which can be found by navigating to the following path: "...\firmware\src"
 - Paste the folder under source files in your project folder (...\firmware\src).
 
 **Step 7** - Add the files in MPLAB X IDE to your project by following the steps mentioned below.
@@ -163,6 +171,13 @@ Follow the steps provided in the link to [Build and program the application](htt
 
 ## 7. Run the demo<a name="step7">
 
+- On startup, WBZ451 will Advertize with local name Mirochip.
+- Open the Tera Term terminal application on your PC. The WBZ451 will show the welcome message in Tera Term.
+- Open MBD app in iPhone, touch on BLE Provisioning and touch on WINC3400.
+- The MBD app will scan for ble advertising device and will display the device.
+- The console log in tera term will display the Bluetooth pairing pass code.
+- When pairing is sucessfully completed, the console log in Tera Tem will show a success message.
+- Press provision button. Now the MBD app will send the Wi-Fi Provisionig credentials to WBZ451 device. WBZ451 will disconnect BLE connections then intialize WINC1500 and connect to the AP.
 - In this application, manual commissioning is used to create a Zigbee network.
 - The Zigbee AnyCloud application starts initializing WFI32 device by connecting to the the WiFi network and getting connected to MQTT broker.
 

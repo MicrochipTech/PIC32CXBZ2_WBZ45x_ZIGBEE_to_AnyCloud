@@ -48,10 +48,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include "crypto/crypto.h"
+#include "ble/lib/include/bt_sys.h"
 #include "peripheral/sercom/usart/plib_sercom1_usart.h"
-#include "peripheral/evsys/plib_evsys.h"
+#include "peripheral/sercom/usart/plib_sercom0_usart.h"
 /*******************************************************************************
 * Copyright (C) 2022 Microchip Technology Inc. and its subsidiaries.
 *
@@ -76,11 +76,12 @@
 *******************************************************************************/
 #include "driver/pds/include/pds.h"
 #include "driver/pds/include/pds_config.h"
-#include "peripheral/sercom/usart/plib_sercom0_usart.h"
+#include "peripheral/evsys/plib_evsys.h"
 #include "peripheral/clk/plib_clk.h"
 #include "peripheral/gpio/plib_gpio.h"
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/cmcc/plib_cmcc.h"
+#include "peripheral/rtc/plib_rtc.h"
 #include "peripheral/nvm/plib_nvm.h"
 #include "wolfssl/wolfcrypt/port/pic32/crypt_wolfcryptcb.h"
 #include "peripheral/tcc/plib_tcc2.h"
@@ -148,22 +149,7 @@ extern "C" {
 
 /* CPU clock frequency */
 #define CPU_CLOCK_FREQUENCY 64000000
-    #define APP_TX_BUFFER_LENGTH   250
-#define APP_RX_READ_LENGTH     1
-typedef struct
-{
-    DRV_HANDLE              usartHandle;
-    DRV_USART_BUFFER_HANDLE readBufferHandle;
-    DRV_USART_BUFFER_HANDLE writeBufferHandle;
-    volatile bool           readInProgressStatus;
-    volatile bool           writeInProgressStatus;
-    volatile bool           dataRead;
-    uint8_t                 txPointOfWrite;
-    uint8_t                 txPointOfRead;
-    uint8_t                 writeBuffer[APP_TX_BUFFER_LENGTH];
-    uint8_t                 writeBufferToDrvUsart[APP_TX_BUFFER_LENGTH];
-    uint8_t                 readBuffer[APP_RX_READ_LENGTH];
-} APP_UART_DATA;
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: System Functions
@@ -271,6 +257,24 @@ Remarks:
     These handles are returned from the "Initialize" functions for each module
     and must be passed into the "Tasks" function for each module.
 */
+#define APP_TX_BUFFER_LENGTH   250
+#define APP_RX_READ_LENGTH     1
+
+typedef struct
+{
+    DRV_HANDLE              usartHandle;
+    DRV_USART_BUFFER_HANDLE readBufferHandle;
+    DRV_USART_BUFFER_HANDLE writeBufferHandle;
+    volatile bool           readInProgressStatus;
+    volatile bool           writeInProgressStatus;
+    volatile bool           dataRead;
+    uint8_t                 txPointOfWrite;
+    uint8_t                 txPointOfRead;
+    uint8_t                 writeBuffer[APP_TX_BUFFER_LENGTH];
+    uint8_t                 writeBufferToDrvUsart[APP_TX_BUFFER_LENGTH];
+    uint8_t                 readBuffer[APP_RX_READ_LENGTH];
+} APP_UART_DATA;
+
 
 typedef struct
 {

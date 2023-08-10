@@ -37,6 +37,7 @@
 
 extern int wfi32_initialized;
 extern APP_UART_DATA appUart;
+extern credentials cred;
 /* ************************************************************************** */
 /* ************************************************************************** */
 /* Section: File Scope or Global Data                                         */
@@ -87,9 +88,9 @@ char password[20]="12345678";
 
 static command_structure Station_mode[]=
 {
-    { 0, "AT+WSTAC=1,\"%s\"\r\n", SSID},
+    { 0, "AT+WSTAC=1,\"%s\"\r\n", cred.ssid},
     { 1, "AT+WSTAC=2,3\r\n", NULL},
-    { 2, "AT+WSTAC=3,\"12345678\"\r\n", NULL},
+    { 2, "AT+WSTAC=3,\"%s\"\r\n", cred.passphrase},
     { 3, "AT+WSTAC=4,255\r\n", NULL}, //Ensure NTP is enable
     { 4, "AT+WSTAC=12,\"pool.ntp.org\"\r\n", NULL}, //set NTP server
     { 5, "AT+WSTAC=13,1\r\n", NULL}, //Enable static (don't use NTP address provided during DHCP)
@@ -98,7 +99,6 @@ static command_structure Station_mode[]=
 
 char broker[20]="broker.hivemq.com";
 char port[20]="1883";
-char clientID[30]="mqttexplorer12584976";
 char keepAlive[20]="60";
 char TLS[20]="0";
 
@@ -177,7 +177,43 @@ void parseRIO2RxMessage(char *buffer) {
 
 
 
+uint16_t read_data(char *dataBuffer) 
+{
+    int count;
 
+    count = SERCOM1_USART_ReadCountGet();
+    if (count == 0)
+        return 0;
+    if (!linePtrBuffer) //
+        linePtrBuffer = dataBuffer; //Initialize to buffer address
+
+    do {
+        uint8_t byte;
+
+        if (SERCOM1_USART_Read(&byte, 1)) //Read one byte at a  time
+        {
+            --count;
+            *linePtrBuffer++ = byte;
+            numberOfBytes++;
+            if (numberOfBytes >= 2) //if I have read at least 2 bytes
+            {
+                //check if last 2 character are \n\r
+                if ((*(linePtrBuffer - 1) == 0x0A)
+                        && (*(linePtrBuffer - 2) == 0x0d)) {
+                    //found CRLF
+                    *linePtrBuffer = 0; // Terminate line with NULL
+                    linePtrBuffer = NULL;
+                    uint16_t bytes;
+                    bytes = numberOfBytes;
+                    numberOfBytes = 0;
+                    return bytes;
+                }
+            }
+        };
+    } while (count);
+
+    return 0;
+}
 /*  A brief description of a section can be given directly below the section
     banner.
  */
@@ -237,6 +273,7 @@ void WFI32_task(void)
         case WFIE32_INIT:
         {
             bool appInitialized = true;
+            SERCOM0_USART_Write((uint8_t*)"WiFi init\r\n",strlen("WiFi init\r\n"));
             gRDY = false;
             gOK = false;
             if (appInitialized) 
@@ -261,7 +298,6 @@ void WFI32_task(void)
                 if(rst_count<2)
                 {
                     DRV_USART_WriteBufferAdd(appUart.usartHandle, (void *)"AT+RST\r\n",strlen("AT+RST\r\n"), &appUart.writeBufferHandle);
-//                    SERCOM1_USART_Write((uint8_t*)"AT+RST\r\n",strlen("AT+RST\r\n"));
                     rst_count++;
                 }
             }
@@ -269,15 +305,15 @@ void WFI32_task(void)
         break;
         case WFIE32_ECHO:
         {
-//            vTaskDelay(2000);
             static int rst_count3=0;
+            char wrbuffer[100];
             if(gATE && gOK)
             {
                 app_WFI32_Data.state=WFI32_STATION_MODE_CONFIG;
                 gOK=false;
-                DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+WSTAC=1,\"MicrochipDemoAP\"\r\n",strlen("AT+WSTAC=1,\"MicrochipDemoAP\"\r\n"), &appUart.writeBufferHandle);
-//                SERCOM1_USART_Write((uint8_t*)"AT+WSTAC=1,\"MicrochipDemoAP\"\r\n",strlen("AT+WSTAC=1,\"MicrochipDemoAP\"\r\n"));
-                SERCOM0_USART_Write((uint8_t*)"AT+WSTAC=1,\"MicrochipDemoAP\"\r\n",strlen("AT+WSTAC=1,\"MicrochipDemoAP\"\r\n"));
+                sprintf(wrbuffer,Station_mode[0].cmd,Station_mode[0].value);
+                DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)wrbuffer,strlen(wrbuffer), &appUart.writeBufferHandle);
+                SERCOM0_USART_Write((uint8_t*)wrbuffer,strlen(wrbuffer));
             }
             else
             {
@@ -299,7 +335,6 @@ void WFI32_task(void)
                     char wrbuffer[100];
                     sprintf(wrbuffer,Station_mode[stationCmdTblIndex].cmd,Station_mode[stationCmdTblIndex].value);
                     DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)wrbuffer,strlen(wrbuffer), &appUart.writeBufferHandle);
-//                    SERCOM1_USART_Write((uint8_t*)wrbuffer,strlen(wrbuffer));
                     SERCOM0_USART_Write((uint8_t*)wrbuffer,strlen(wrbuffer));
                     stationCmdTblIndex++;
                 }
@@ -320,9 +355,8 @@ void WFI32_task(void)
         case WFIE32_STA_CONNECT:
         {
             vTaskDelay(5000);
-            SERCOM1_USART_Write((uint8_t*)"AT+WSTA=1\r\n",strlen("AT+WSTA=1\r\n"));
-            DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"Connecting to wifi\r\n",strlen("Connecting to wifi\r\n"), &appUart.writeBufferHandle);
-//            SERCOM0_USART_Write((uint8_t*)"Connecting to wifi\r\n",strlen("Connecting to wifi\r\n"));
+            DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+WSTA=1\r\n",strlen("AT+WSTA=1\r\n"), &appUart.writeBufferHandle);
+            SERCOM0_USART_Write((uint8_t*)"Connecting to wifi\r\n",strlen("Connecting to wifi\r\n"));
             app_WFI32_Data.state =WFI32_WAIT_FOR_IP;
         }
         break;
@@ -333,9 +367,8 @@ void WFI32_task(void)
             {
                 SERCOM0_USART_Write((uint8_t*)"MQTT Config\r\n",strlen("MQTT Config\r\n"));
                 app_WFI32_Data.state=WFI32_MQTT_CONFIG;
-                DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+MQTTC=1,\"broker.hivemq.com\"\r\n",strlen("AT+MQTTC=1,\"broker.hivemq.com\"\r\n"), &appUart.writeBufferHandle);
-//                SERCOM1_USART_Write((uint8_t*)"AT+MQTTC=1,\"test.mosquitto.org\"\r\n",strlen("AT+MQTTC=1,\"test.mosquitto.org\"\r\n"));
-                SERCOM0_USART_Write((uint8_t*)"AT+MQTTC=1,\"broker.hivemq.com\"\r\n",strlen("AT+MQTTC=1,\"broker.hivemq.com\"\r\n"));
+                DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+MQTTC=1,\"test.mosquitto.org\"\r\n",strlen("AT+MQTTC=1,\"test.mosquitto.org\"\r\n"), &appUart.writeBufferHandle);
+                SERCOM0_USART_Write((uint8_t*)"AT+MQTTC=1,\"test.mosquitto.org\"\r\n",strlen("AT+MQTTC=1,\"test.mosquitto.org\"\r\n"));
                 gOK=false;
             }
         }
@@ -350,7 +383,6 @@ void WFI32_task(void)
                     char wrbuffer[100];
                     sprintf(wrbuffer,mqttCmdTbl[mqttCmdTblIndex].cmd,Station_mode[mqttCmdTblIndex].value);
                     DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)wrbuffer,strlen(wrbuffer), &appUart.writeBufferHandle);
-//                    SERCOM1_USART_Write((uint8_t*)wrbuffer,strlen(wrbuffer));
                     SERCOM0_USART_Write((uint8_t*)wrbuffer,strlen(wrbuffer));
                     mqttCmdTblIndex++;
                 }
@@ -373,7 +405,6 @@ void WFI32_task(void)
         {
             vTaskDelay(4000);
             DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+MQTTCONN=1\r\n",strlen("AT+MQTTCONN=1\r\n"), &appUart.writeBufferHandle);
-//            SERCOM1_USART_Write((uint8_t*)"AT+MQTTCONN=1\r\n",strlen("AT+MQTTCONN=1\r\n"));
             app_WFI32_Data.state =WFI32_WAIT_FOR_MQTT;
             gMQTTCONN=false;gOK=false;
         }
@@ -386,7 +417,6 @@ void WFI32_task(void)
                 SERCOM0_USART_Write((uint8_t*)"MQTT Connected\r\n",strlen("MQTT Connected\r\n"));
                 vTaskDelay(5000);
                 DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+MQTTSUB=\"MCHP/WSG/ZIGBEE\",0\r\n",strlen("AT+MQTTSUB=\"MCHP/WSG/ZIGBEE\",0\r\n"), &appUart.writeBufferHandle);
-//                SERCOM1_USART_Write((uint8_t*)"AT+MQTTSUB=\"MCHP/WSG/ZIGBEE\",0\r\n",strlen("AT+MQTTSUB=\"MCHP/WSG/ZIGBEE\",0\r\n"));
                 app_WFI32_Data.state = WFI32_SUBSCRIBE;
             }
         }
@@ -399,7 +429,6 @@ void WFI32_task(void)
                 gMQTTSUB=false;
                 app_WFI32_Data.state = WFI32_SUBSCRIBE2;
                 DRV_USART_WriteBufferAdd(appUart.usartHandle,(uint8_t*)"AT+MQTTSUB=\"MCHP/WSG/ZGBMQTT\",0\r\n",strlen("AT+MQTTSUB=\"MCHP/WSG/ZGBMQTT\",0\r\n"), &appUart.writeBufferHandle);
-//                SERCOM1_USART_Write((uint8_t*)"AT+MQTTSUB=\"MCHP/WSG/ZGBMQTT\",0\r\n",strlen("AT+MQTTSUB=\"MCHP/WSG/ZGBMQTT\",0\r\n"));
                 SERCOM0_USART_Write((uint8_t*)"Subscribing to topic 1\r\n",strlen("Subscribing to topic 1\r\n"));
             }
         }
@@ -419,6 +448,7 @@ void WFI32_task(void)
         
         case WFI32_IDLE:
         {
+            
             //error handle
         }
         break;

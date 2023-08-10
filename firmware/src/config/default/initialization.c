@@ -243,6 +243,10 @@ SYSTEM_OBJECTS sysObj;
 // Section: Library/Stack Initialization Data
 // *****************************************************************************
 // *****************************************************************************
+#define QUEUE_LENGTH_BLE        (32)
+#define QUEUE_ITEM_SIZE_BLE     (sizeof(void *))
+OSAL_QUEUE_HANDLE_TYPE bleRequestQueueHandle;
+
 /*******************************************************************************
 * Copyright (C) 2022 Microchip Technology Inc. and its subsidiaries.
 *
@@ -371,28 +375,6 @@ __attribute__((ramfunc, long_call, section(".ramfunc"),unique_section)) void PCH
 // *****************************************************************************
 // *****************************************************************************
 
-/*******************************************************************************
-  Function:
-    void STDIO_BufferModeSet ( void )
-
-  Summary:
-    Sets the buffering mode for stdin and stdout
-
-  Remarks:
- ********************************************************************************/
-static void STDIO_BufferModeSet(void)
-{
-    /* MISRAC 2012 deviation block start */
-    /* MISRA C-2012 Rule 21.6 deviated 2 times in this file.  Deviation record ID -  H3_MISRAC_2012_R_21_6_DR_3 */
-
-    /* Make stdin unbuffered */
-    setbuf(stdin, NULL);
-
-    /* Make stdout unbuffered */
-    setbuf(stdout, NULL);
-}
-
-
 /* MISRAC 2012 deviation block end */
 
 /*******************************************************************************
@@ -411,8 +393,7 @@ void SYS_Initialize ( void* data )
     /* MISRAC 2012 deviation block start */
     /* MISRA C-2012 Rule 2.2 deviated in this file.  Deviation record ID -  H3_MISRAC_2012_R_2_2_DR_1 */
 
-    STDIO_BufferModeSet();
-
+    BT_SYS_Cfg_T        btSysCfg;
 
 /*******************************************************************************
 * Copyright (C) 2022 Microchip Technology Inc. and its subsidiaries.
@@ -455,9 +436,11 @@ void SYS_Initialize ( void* data )
 
     SERCOM1_USART_Initialize();
 
+    SERCOM0_USART_Initialize();
+
     EVSYS_Initialize();
 
-    SERCOM0_USART_Initialize();
+    RTC_Initialize();
 
     NVM_Initialize();
 
@@ -524,7 +507,7 @@ void SYS_Initialize ( void* data )
 *******************************************************************************/
     
     // Initialize RF System
-    SYS_Load_Cal(WSS_ENABLE_ZB);
+    SYS_Load_Cal(WSS_ENABLE_BLE_ZB);
  
     // Set up OSAL for RF Stack Library usage
     osalAPIList.OSAL_CRIT_Enter      = OSAL_CRIT_Enter;
@@ -547,6 +530,21 @@ void SYS_Initialize ( void* data )
 
     osalAPIList.OSAL_MemAlloc = OSAL_Malloc;
     osalAPIList.OSAL_MemFree = OSAL_Free;
+
+
+
+    // Create BLE Stack Message QUEUE
+    OSAL_QUEUE_Create(&bleRequestQueueHandle, QUEUE_LENGTH_BLE, QUEUE_ITEM_SIZE_BLE);
+
+    // Retrieve BLE calibration data
+    btSysCfg.addrValid = IB_GetBdAddr(&btSysCfg.devAddr[0]);
+    btSysCfg.rssiOffsetValid =IB_GetRssiOffset(&btSysCfg.rssiOffset);
+    btSysCfg.antennaGainValid = IB_GetAntennaGain(&btSysCfg.antennaGain);
+
+
+    // Initialize BLE Stack
+    BT_SYS_Init(&bleRequestQueueHandle, &osalAPIList, NULL, &btSysCfg);
+    
 
 
 

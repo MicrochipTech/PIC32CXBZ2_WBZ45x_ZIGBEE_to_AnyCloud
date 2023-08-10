@@ -53,8 +53,7 @@
 // Section: Macros
 // *****************************************************************************
 // *****************************************************************************
-#define APP_TX_BUFFER_LENGTH   250
-#define APP_RX_READ_LENGTH     1
+
 
 // *****************************************************************************
 // *****************************************************************************
@@ -73,21 +72,8 @@
 
   Remarks:
     Application strings and buffers are be defined outside this structure.
-// */
-//typedef struct
-//{
-//    DRV_HANDLE              usartHandle;
-//    DRV_USART_BUFFER_HANDLE readBufferHandle;
-//    DRV_USART_BUFFER_HANDLE writeBufferHandle;
-//    volatile bool           readInProgressStatus;
-//    volatile bool           writeInProgressStatus;
-//    volatile bool           dataRead;
-//    uint8_t                 txPointOfWrite;
-//    uint8_t                 txPointOfRead;
-//    uint8_t                 writeBuffer[APP_TX_BUFFER_LENGTH];
-//    uint8_t                 writeBufferToDrvUsart[APP_TX_BUFFER_LENGTH];
-//    uint8_t                 readBuffer[APP_RX_READ_LENGTH];
-//} APP_UART_DATA;
+ */
+
 
 // *****************************************************************************
 // *****************************************************************************
@@ -213,11 +199,11 @@ void APP_UartHandler(void)
         }
         strncpy(buffer,appUart.writeBufferToDrvUsart,tempWriteCount);
         sprintf(buffer1,"AT+MQTTPUB=0,0,0,\"MCHP/WSG/ZIGBEE\",\"%s\"\r\n",buffer);
-//        for(int i=0;i<500;i++)
-//            asm("nop");
+        for(int i=0;i<500;i++)
+            asm("nop");
         if(wfi32_initialized==1)
         {
-//            gOK=false;
+            gOK=false;
             DRV_USART_WriteBufferAdd(appUart.usartHandle, buffer1, strlen(buffer1), &appUart.writeBufferHandle);
         }
         if (appUart.writeBufferHandle != DRV_USART_BUFFER_HANDLE_INVALID)

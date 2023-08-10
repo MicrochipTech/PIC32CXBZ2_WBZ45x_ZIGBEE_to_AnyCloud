@@ -54,13 +54,14 @@
 #include <string.h>
 #include "app.h"
 #include "definitions.h"
+#include "app_ble.h"
 #include "app_zigbee/app_zigbee.h"
 #include <z3device/common/include/z3Device.h>
 #include <z3device/stack_interface/zgb_api.h>
 #include <z3device/stack_interface/bdb/include/bdb_api.h>
 #include <osal/osal_freertos.h>
 #include "WFI32/WFI32_INIT.h"
-
+#include "ble_cms/ble_conn_service_svc.h"
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data Definitions
@@ -72,8 +73,7 @@ extern void APP_UartHandler(void);
 extern void process_ZB_evt(void);
 extern void ZB_ZCL_CallBack(ZB_AppGenericCallbackParam_t* cb);
 extern ZDO_CALLBACK_ptr ZB_ZDO_CallBack[];
-
-
+extern credentials cred;
 #define PREAMBLE "+MQTTPUB:16,\"MCHP/WSG/ZGBMQTT\","
 #define LEN_POSITION 32
 // *****************************************************************************
@@ -93,6 +93,7 @@ extern ZDO_CALLBACK_ptr ZB_ZDO_CallBack[];
 
 APP_DATA appData;
 
+PDS_DECLARE_ITEM(PDS_APP_COMMISION_ID,sizeof(cred),&cred,NULL,NO_ITEM_FLAGS);
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Callback Functions
@@ -120,7 +121,13 @@ int a2i(char* txt)
 }
 /* TODO:  Add any necessary local functions.
 */
-
+void send_data(char* txt,int length)
+{
+    APP_Msg_T    appMsg;
+    appMsg.msgId = APP_MSG_UART_CMD_READY;
+    memcpy(&appMsg.msgData, txt,length);
+    OSAL_QUEUE_Send(&appData.appQueue, &appMsg, 0);
+}
 
 // *****************************************************************************
 // *****************************************************************************
@@ -141,7 +148,7 @@ void APP_Initialize ( void )
     /* Place the App state machine in its initial state. */
     appData.state = APP_STATE_INIT;
 
-
+    
     appData.appQueue = xQueueCreate( 64, sizeof(APP_Msg_T) );
     /* TODO: Initialize your application's state machine and other
      * parameters.
@@ -174,12 +181,24 @@ void APP_Tasks ( void )
         case APP_STATE_INIT:
         {
             bool appInitialized = true;
-            //appData.appQueue = xQueueCreate( 10, sizeof(APP_Msg_T) );
-            app_WFI32_Data.state=WFIE32_INIT;
+            APP_BleStackInit();
+            BLE_GAP_SetAdvEnable(0x01, 0);
+            SERCOM0_USART_Write((uint8_t*)"Welcome to Zigbee_AnyCloud BLE Provisioning Example\r\n",strlen("Welcome to Zigbee_AnyCloud BLE Provisioning Example\r\n"));
+            if (PDS_IsAbleToRestore(PDS_APP_COMMISION_ID))
+            {
+                SERCOM0_USART_Write((uint8_t *)"PDS Restore Successful\r\n",strlen("PDS Restore Successful\r\n"));
+                PDS_Restore(PDS_APP_COMMISION_ID);
+                app_WFI32_Data.state=WFIE32_INIT;
+                appMsg->msgId = APP_WFI32_INIT;
+            }
+            else
+            {
+                SERCOM0_USART_Write((uint8_t *)"PDS Restore Failed\r\n",strlen("PDS Restore Failed\r\n"));
+            }
+            BLE_CONN_SERV_Add();
             if (appInitialized)
             {
                 appData.state = APP_STATE_SERVICE_TASKS;
-                appMsg->msgId = APP_WFI32_INIT;
                 OSAL_QUEUE_Send(&appData.appQueue, p_appMsg, 0);
             }
             break;
@@ -189,6 +208,16 @@ void APP_Tasks ( void )
         {
             if (OSAL_QUEUE_Receive(&appData.appQueue, &appMsg,OSAL_WAIT_FOREVER))
             {
+                if(p_appMsg->msgId==APP_MSG_BLE_STACK_EVT)
+                {
+                    // Pass BLE Stack Event Message to User Application for handling
+                    APP_BleStackEvtHandler((STACK_Event_T *)p_appMsg->msgData);
+                }
+                else if(p_appMsg->msgId==APP_MSG_BLE_STACK_LOG)
+                {
+                    // Pass BLE LOG Event Message to User Application for handling
+                    APP_BleStackLogHandler((BT_SYS_LogEvent_T *)p_appMsg->msgData);
+                }
                 if (p_appMsg->msgId == APP_MSG_ZB_STACK_CB)
                 {
                     // Pass Zigbee Stack Callback Event Message to User Application for handling
@@ -226,7 +255,6 @@ void APP_Tasks ( void )
                 }
                 else if(p_appMsg->msgId==APP_WFI32_INIT)
                 {
-                    // Pass Zigbee Stack Event Message to User Application for handling
                     WFI32_task();
                     appMsg->msgId = APP_WFI32_INIT;
                     OSAL_QUEUE_Send(&appData.appQueue, p_appMsg, 0);
@@ -237,23 +265,22 @@ void APP_Tasks ( void )
                 }
                 else if (p_appMsg->msgId == APP_MSG_RIO_2_WBZ)
                 {
-                    asm("nop");
                     if(strncmp(appMsg->msgData, PREAMBLE, strlen(PREAMBLE)) == 0)
                     {
-                         int len1= strlen(appMsg->msgData);
+                        int len1= strlen(appMsg->msgData);
                         char s[2]=",";
                         char *token;
-                        int len;
+                        char buffer[256];
+                        size_t len;
                         char *substring=OSAL_Malloc(len1);
                         if(substring==NULL)
                             break;
                         strncpy(substring,appMsg->msgData+(LEN_POSITION-1),len1);
                         token = strtok(substring, s);
                         len=a2i(token);
-                        char *substring2=OSAL_Malloc(len);
+                        char *substring2=OSAL_Malloc(len); 
                         if(substring2==NULL)
                             break;
-                        memset(appMsg->msgData,0, sizeof(appMsg->msgData));
                         for(int i=0;i<len1;i++)
                         {
                             if( substring[i] == 34 )
@@ -262,11 +289,12 @@ void APP_Tasks ( void )
                                  break;
                             }
                         }
+                        memset(p_appMsg->msgData,0,sizeof(p_appMsg->msgData));
                         SERCOM0_USART_Write((uint8_t*)substring2,len);
-                        SERCOM0_USART_Write((uint8_t*)"\r\n",strlen("\r\n"));
                         appMsg->msgId = APP_MSG_UART_CMD_READY;
-                        memcpy(appMsg->msgData, substring2, len);
+                        memcpy(appMsg->msgData, substring2,len);
                         OSAL_QUEUE_Send(&appData.appQueue, p_appMsg, 0);
+                        SERCOM0_USART_Write((uint8_t*)appMsg->msgData,strlen(appMsg->msgData));
                         OSAL_Free(substring2);
                         OSAL_Free(substring);
                     }
@@ -274,6 +302,17 @@ void APP_Tasks ( void )
                     {
                         parseRIO2RxMessage(appMsg->msgData);
                     }
+                }
+                else if(p_appMsg->msgId==APP_MSG_BLE_PROV_COMPLETE)
+                {
+                    app_idle_task();
+                    app_WFI32_Data.state=WFIE32_INIT;
+                    appMsg->msgId = APP_WFI32_INIT;
+                    OSAL_QUEUE_Send(&appData.appQueue, p_appMsg, 0);
+                    SERCOM0_USART_Write((uint8_t*)cred.ssid,strlen(cred.ssid));
+                    SERCOM0_USART_Write((uint8_t *)"\r\n",strlen("\r\n"));
+                    SERCOM0_USART_Write((uint8_t*)cred.passphrase,strlen(cred.passphrase));
+                    SERCOM0_USART_Write((uint8_t *)"\r\n",strlen("\r\n"));
                 }
             }
             break;

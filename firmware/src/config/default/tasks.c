@@ -60,6 +60,9 @@
 // Section: RTOS "Tasks" Routine
 // *****************************************************************************
 // *****************************************************************************
+#define TASK_BLE_STACK_SIZE (2 *1024 / sizeof(portSTACK_TYPE))
+#define TASK_BLE_PRIORITY (tskIDLE_PRIORITY + 3)
+
 #define TASK_ZGB_STACK_SIZE (8 *1024 / sizeof(portSTACK_TYPE))
 #define TASK_ZGB_PRIORITY (tskIDLE_PRIORITY + 2)
 
@@ -102,7 +105,11 @@ void SYS_Tasks ( void )
     
 
     /* Maintain Middleware & Other Libraries */
-        if (xTaskCreate(zigbee_task, "ZGB", TASK_ZGB_STACK_SIZE, NULL, TASK_ZGB_PRIORITY, &zigbeeTaskHandle) != pdPASS)
+    
+    if (xTaskCreate(BM_Task,     "BLE", TASK_BLE_STACK_SIZE, NULL  , TASK_BLE_PRIORITY, NULL) != pdPASS)
+        while (1);
+
+    if (xTaskCreate(zigbee_task, "ZGB", TASK_ZGB_STACK_SIZE, NULL, TASK_ZGB_PRIORITY, &zigbeeTaskHandle) != pdPASS)
         while (1);
 
 
