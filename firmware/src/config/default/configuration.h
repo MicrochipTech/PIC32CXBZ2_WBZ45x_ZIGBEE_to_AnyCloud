@@ -145,7 +145,6 @@ extern "C" {
 #define WOLFSSL_HAVE_MCHP_HW_AES_ECB
 #define HAVE_AES_CBC
 #define WOLFSSL_HAVE_MCHP_HW_AES_CBC
-#define WOLFSSL_AES_OFB
 #define NO_RC4
 #define NO_HC128
 #define NO_RABBIT

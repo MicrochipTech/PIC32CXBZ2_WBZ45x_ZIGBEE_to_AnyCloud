@@ -53,12 +53,13 @@
 // *****************************************************************************
 
 #include <stdint.h>
+#include "definitions.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include "configuration.h"
 #include "osal/osal_freertos_extend.h"
-
+#include <pds/include/wlPdsMemIds.h>
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 
@@ -84,6 +85,14 @@ extern "C" {
     determine the behavior of the application at various times.
 */
 
+enum{
+    PDS_PROV_APP_ITEM_ID_1 = (PDS_MODULE_APP_OFFSET),
+    PDS_PROV_APP_ITEM_ID_2,
+}; 
+
+#define PDS_APP_COMMISION_ID PDS_PROV_APP_ITEM_ID_1
+
+
 typedef enum
 {
     /* Application's state machine's initial state. */
@@ -102,6 +111,7 @@ typedef enum APP_MsgId_T
     APP_MSG_ZB_STACK_EVT,
     APP_MSG_ZB_STACK_CB,
     APP_MSG_RIO_2_WBZ,
+    APP_MSG_BLE_PROV_COMPLETE,
     APP_MSG_STACK_END
 } APP_MsgId_T;
 
@@ -110,6 +120,36 @@ typedef struct APP_Msg_T
     uint8_t msgId;
     uint8_t msgData[256];
 } APP_Msg_T;
+
+
+/** @brief maximum ssid length */
+#define WIFI_PROVISION_MAX_SSID_LENGTH					(32)
+/** @brief maximum pass phrase length */
+#define WIFI_PROVISION_MAX_PASS_LENGTH					(64)
+
+/** @brief maximum ssid length */
+#define WIFI_PROVISION_MAX_SSID_LENGTH					(32)
+/** @brief maximum pass phrase length */
+#define WIFI_PROVISION_MAX_PASS_LENGTH					(64)
+
+#define WIFI_PROV_CRED_SECTYPE_POS	(0)  //0 - 1 byte security type
+#define WIFI_PROV_CRED_SSIDLEN_POS	(WIFI_PROV_CRED_SECTYPE_POS + 1)  //1 - 1 byte ssid length
+#define WIFI_PROV_CRED_SSID_POS		(WIFI_PROV_CRED_SSIDLEN_POS + 1)  // 2 - ssid (max len 30) occupies bytes 2-31
+#define WIFI_PROV_CRED_PASSLEN_POS	(WIFI_PROV_CRED_SSID_POS + WIFI_PROVISION_MAX_SSID_LENGTH) // 34 - 1 byte passphrase length
+#define WIFI_PROV_CRED_PASS_POS		(WIFI_PROV_CRED_PASSLEN_POS + 1) //35 - passphrase (max len 30) occupies byte 35-65
+
+typedef struct
+{
+	uint8_t sec_type;
+	uint8_t ssid_length;
+	uint8_t ssid[WIFI_PROVISION_MAX_SSID_LENGTH];
+	uint8_t passphrase_length;
+	uint8_t passphrase[WIFI_PROVISION_MAX_PASS_LENGTH];
+} credentials;
+
+
+
+
 
 // *****************************************************************************
 /* Application Data
