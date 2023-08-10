@@ -6,7 +6,7 @@
 > "IoT Made Easy!" 
 
 Devices: **| PIC32CXBZ2 | WBZ45x | PIC32MZ-W1 | WFI32 |**<br>
-Features: **| ZIGBEE | WiFi |**
+Features: **| ZIGBEE | WiFi | BLE |**
 
 
 ## ⚠ Disclaimer
