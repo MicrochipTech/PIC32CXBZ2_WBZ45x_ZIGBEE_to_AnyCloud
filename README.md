@@ -181,11 +181,7 @@ Follow the steps provided in the link to [Build and program the application](htt
 - In this application, manual commissioning is used to create a Zigbee network.
 - The Zigbee AnyCloud application starts initializing WFI32 device by connecting to the the WiFi network and getting connected to MQTT broker.
 
-#### Note
-
-The given application is configured for the below given SSID and password. The SSID and password can also be changed fromt the "WFI32_INIT.c" file.
-SSID: MicrochipDemoAP
-Password: 12345678
+![](Docs/BLE_prov.gif)
 
 - The user can control the Zigbee network with his Mobile phone connected to Cloud server.
 - Here the ZigBee console commands are sent to the WBZ451 Curiosity board by publishing a message in the Cloud. Data received from MQTT is in the given format.ZigBee console data from MQTT is taken from the data received from WFI32 IOT board.
