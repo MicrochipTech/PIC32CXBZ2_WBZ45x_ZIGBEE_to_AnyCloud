@@ -183,6 +183,10 @@ Follow the steps provided in the link to [Build and program the application](htt
 
 ![](Docs/BLE_prov.gif)
 
+#### Note
+
+In this BLE provisioning example, the iPhone only supports "Open" and "WPA". On the Android phone, only "Open" is supported.
+
 - The user can control the Zigbee network with his Mobile phone connected to Cloud server.
 - Here the ZigBee console commands are sent to the WBZ451 Curiosity board by publishing a message in the Cloud. Data received from MQTT is in the given format.ZigBee console data from MQTT is taken from the data received from WFI32 IOT board.
 
